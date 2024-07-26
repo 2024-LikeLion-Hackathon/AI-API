@@ -1,5 +1,5 @@
 from openai import OpenAI
-from utils import api
+from utils import prompt
 
 class EmptyFieldError(Exception):
     """
@@ -8,6 +8,29 @@ class EmptyFieldError(Exception):
     
     def __init__(self, message):
         super().__init__(message)
+
+def diary_to_words_lst(text:str) -> list:
+    
+    if not text:
+        raise EmptyFieldError("diary is Empty")
+    
+    client = OpenAI(api_key=prompt.get_api_key())
+
+    
+    for i in range(3):
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "user", "content" : f"{text}\n\n위의 내용은 일기이다. 일기에서 핵심단어(물체 또는 행동) 2 ~ 4개 정도 출력해줘 -> \n['테니스', '동료', '산책', '차']"}
+            ]
+        )
+        if type(eval(response.choices[0].message.content)) == list:
+            return eval(response.choices[0].message.content)
+        
+        
+    raise ValueError("일기 내용이 너무 짧거나 너무 길음")
+    
+    
 
 
 def words_lst_to_str(words_lst:list) -> str:
@@ -28,6 +51,8 @@ def words_lst_to_str(words_lst:list) -> str:
     """
     if not words_lst:
         raise EmptyFieldError("word_list is Empty")
+    elif type(words_lst) != list:
+        raise TypeError
     
     words_prompt = ''
     for word in words_lst:
@@ -40,13 +65,15 @@ def words_str_prompting(words_prompt:str) -> str:
     
     if not words_prompt:
         raise EmptyFieldError("words_prompt is Empty")
+    elif type(words_prompt) != str:
+        raise TypeError
     
-    client = OpenAI(api_key=api.get_api_key())
+    client = OpenAI(api_key=prompt.get_api_key())
     
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
-            {"role": "user", "content" : f"{words_prompt} {api.get_image_prompt()}"}
+            {"role": "user", "content" : f"{words_prompt} {prompt.get_image_prompt()}"}
         ]
     )
     
@@ -67,12 +94,14 @@ def generate_image(prompt: str) -> str:
     
     if not prompt:
         raise EmptyFieldError("prompt is Empty")
+    elif type(prompt) != str:
+        raise TypeError
     
-    client = OpenAI(api_key=api.get_api_key())
+    client = OpenAI(api_key=prompt.get_api_key())
 
     response = client.images.generate(
         model="dall-e-3",
-        prompt=prompt,
+        prompt=prompt+ "다음 내용에 대해 픽셀 아트 형식으로 그려줘",
         size="1024x1024",
         quality="standard",
         n=1,

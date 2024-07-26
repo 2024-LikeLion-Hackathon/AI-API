@@ -3,7 +3,7 @@ import re
 from openai import OpenAI
 from utils import prompt
 
-client = OpenAI()
+
 
 class InputError(Exception):
     def __init__(self, message):
@@ -42,11 +42,13 @@ def text_to_score(text= "") -> int:
     if text == "":
         raise InputError("text is None!!")
     
+    client = OpenAI(api_key=prompt.get_api_key())
+    
     for __ in range(3):
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": f"{prompt.score_prompt}"},
+                {"role": "system", "content": f"{prompt.get_score_prompt()}"},
                 {"role": "user", "content": f"{text}"}
             ]
         )
